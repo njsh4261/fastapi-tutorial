@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Task Manager</title>
+    </head>
+    <body>
+        <h1>Task Manager</h1>
+        <h2>Your ID: <span id="ws-id"></span></h2>
+        <div>
+            <form action="" onsubmit="requestJob(event)">
+                <input type="text" id="work-size" autocomplete="off"/>
+                <button>Request new job</button>
+            </form>
+            <button onclick="removeAll(event)">Remove All </button>
+        </div>
+        <ul id='tasks-log'>
+        </ul>
+        <table id='tasks-table' border="1">
+            <th>ID</th>
+            <th>Work Size</th>
+            <th>Status</th>
+            <th>Total Time</th>
+        </table>
+        <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
+        <script>
+            var client_id = Date.now();
+            document.querySelector("#ws-id").textContent = client_id;
+            var ws = new WebSocket(`ws://localhost:8000/ws/${client_id}`);
+
+            ws.onmessage = function(event) {
+                result = JSON.parse(event.data)
+                switch(result.status) {
+                    case "running":
+                        let newTask = document.createElement('tr');
+                        newTask.id = `task-${result.id}`
+                        newTask.innerHTML = `
+                            <td>${result.id}</td>
+                            <td>${result.size}</td>
+                            <td><p style="color:yellow;">${result.status}</p></td>
+                            <td></td>
+                        `;
+                        document.getElementById('tasks-table').append(newTask);
+                        break;
+                    case "done":
+                        let task = document.getElementById(`task-${result.id}`)
+                        if(task) {
+                            task.innerHTML = `
+                                <td>${result.id}</td>
+                                <td>${result.size}</td>
+                                <td><p style="color:green;">${result.status}</p></td>
+                                <td>${result.total_time}</td>
+                            `
+                        }
+                        console.log(result.result);
+                        break;
+                    case "fail":
+                        let taskFailed = document.getElementById(`task-${result.id}`)
+                        if(taskFailed) {
+                            taskFailed.innerHTML = `
+                                <td>${result.id}</td>
+                                <td>${result.size}</td>
+                                <td><p style="color:red;">${result.status}</p></td>
+                                <td>${result.total_time}</td>
+                            `
+                        }
+                        break;
+                }
+            };
+
+            function requestJob(event) {
+                event.preventDefault();
+                let input = document.getElementById("work-size")
+                ws.send(input.value)
+                // input.value = ''
+            }
+
+            function removeAll(event) {
+                event.preventDefault();
+                document.getElementById('tasks-table').innerHTML = `
+                    <th>ID</th>
+                    <th>Work Size</th>
+                    <th>Status</th>
+                    <th>Total Time</th>
+                `;
+            }
+        </script>
+    </body>
+</html>
