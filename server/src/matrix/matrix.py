@@ -1,11 +1,12 @@
 import numpy as np
 
 
-def matrix_multiplication(size):
+def matrix_multiplication(size, result):
     a = np.random.rand(size, size)
     b = np.random.rand(size, size)
-    return {
-        "a": np.array2string(a),
-        "b": np.array2string(b),
-        "c": np.array2string(a @ b)
-    }
+
+    result["a"] = np.array2string(a)
+    result["b"] = np.array2string(b)
+    result["c"] = np.array2string(a @ b)
+
+    return 0

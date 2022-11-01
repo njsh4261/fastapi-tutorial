@@ -7,9 +7,8 @@ from src.ws.connection_manager import ConnectionManager
 
 app = FastAPI()
 
-loop = asyncio.get_running_loop()
 connection_manager = ConnectionManager()
-task_manager = TaskManager(connection_manager, loop)
+task_manager = TaskManager(connection_manager, asyncio.get_running_loop())
 
 
 @app.websocket("/ws/{client_id}")

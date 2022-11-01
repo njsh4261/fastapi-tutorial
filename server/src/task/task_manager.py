@@ -1,8 +1,9 @@
 import asyncio
 import time
-from multiprocessing import Process
-from src.ws.connection_manager import ConnectionManager
+from multiprocessing import Process, Manager
+
 from src.matrix.matrix import matrix_multiplication
+from src.ws.connection_manager import ConnectionManager
 
 
 def run_task(func, timeout, *args, **kwargs):
@@ -18,6 +19,7 @@ class TaskManager:
     def __init__(self, connection_manager, loop):
         self.connection_manager: ConnectionManager = connection_manager
         self.loop: asyncio.AbstractEventLoop = loop
+        self.manager = Manager()
 
     async def add_task(self, task_size, timeout: float = 30.0):
         start_time = time.time()
@@ -27,9 +29,10 @@ class TaskManager:
         })
 
         try:
-            result = await asyncio.wait_for(
+            result = self.manager.dict()
+            await asyncio.wait_for(
                 self.loop.run_in_executor(
-                    None, run_task, matrix_multiplication, timeout, task_size
+                    None, run_task, matrix_multiplication, timeout, task_size, result
                 ),
                 None
             )
@@ -38,7 +41,7 @@ class TaskManager:
                 "status": "done",
                 "size": task_size,
                 "total_time": f"{time.time() - start_time:.3f}s",
-                "result": result
+                "result": dict(result)
             })
         except asyncio.exceptions.TimeoutError:
             await self.connection_manager.broadcast({
