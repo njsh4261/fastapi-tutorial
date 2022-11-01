@@ -19,18 +19,24 @@ class TaskManager:
         self.connection_manager: ConnectionManager = connection_manager
         self.loop: asyncio.AbstractEventLoop = loop
 
-    async def add_task(self, size, task_id, start_time, timeout: float = 30.0):
+    async def add_task(self, task_size, timeout: float = 30.0):
+        start_time = time.time()
+        task_id = round(start_time * 1000000 % 1000000000)
+        await self.connection_manager.broadcast({
+            "id": task_id, "status": "running", "size": task_size
+        })
+
         try:
             result = await asyncio.wait_for(
                 self.loop.run_in_executor(
-                    None, run_task, matrix_multiplication, timeout, size
+                    None, run_task, matrix_multiplication, timeout, task_size
                 ),
                 None
             )
             await self.connection_manager.broadcast({
                 "id": task_id,
                 "status": "done",
-                "size": size,
+                "size": task_size,
                 "total_time": f"{time.time() - start_time:.3f}s",
                 "result": result
             })
@@ -38,6 +44,6 @@ class TaskManager:
             await self.connection_manager.broadcast({
                 "id": task_id,
                 "status": "fail",
-                "size": size,
+                "size": task_size,
                 "total_time": f"{time.time() - start_time:.3f}s"
             })

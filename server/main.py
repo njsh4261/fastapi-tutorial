@@ -1,5 +1,4 @@
 import asyncio
-import time
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 
@@ -20,14 +19,7 @@ async def websocket_endpoint(websocket: WebSocket, client_id: int):
     try:
         while True:
             task_size = int(await websocket.receive_text())
-            start_time = time.time()
-            task_id = round(start_time * 1000000 % 1000000000)
-
-            await connection_manager.broadcast({
-                "id": task_id, "status": "running", "size": task_size
-            })
-
-            asyncio.ensure_future(task_manager.add_task(task_size, task_id, start_time))
+            asyncio.ensure_future(task_manager.add_task(task_size))
     except WebSocketDisconnect:
         connection_manager.disconnect(websocket)
         print(f"disconnected: {client_id}")
