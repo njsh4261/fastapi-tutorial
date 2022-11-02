@@ -8,7 +8,10 @@
         <h2>Your ID: <span id="ws-id"></span></h2>
         <div>
             <form action="" onsubmit="requestJob(event)">
+                <label for="work-size">Work Size</label>
                 <input type="text" id="work-size" autocomplete="off"/>
+                <label for="timeout">Timeout</label>
+                <input type="text" id="timeout" autocomplete="off"/>
                 <button>Request new job</button>
             </form>
             <button onclick="removeAll(event)">Remove All </button>
@@ -19,6 +22,7 @@
             <th>ID</th>
             <th>Work Size</th>
             <th>Status</th>
+            <th>Timeout</th>
             <th>Total Time</th>
         </table>
         <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
@@ -37,6 +41,7 @@
                             <td>${result.id}</td>
                             <td>${result.size}</td>
                             <td><p style="color:yellow;">${result.status}</p></td>
+                            <td>${result.timeout}</td>
                             <td></td>
                         `;
                         document.getElementById('tasks-table').append(newTask);
@@ -48,6 +53,7 @@
                                 <td>${result.id}</td>
                                 <td>${result.size}</td>
                                 <td><p style="color:green;">${result.status}</p></td>
+                                <td>${result.timeout}</td>
                                 <td>${result.total_time}</td>
                             `
                         }
@@ -60,6 +66,7 @@
                                 <td>${result.id}</td>
                                 <td>${result.size}</td>
                                 <td><p style="color:red;">${result.status}</p></td>
+                                <td>${result.timeout}</td>
                                 <td>${result.total_time}</td>
                             `
                         }
@@ -69,9 +76,12 @@
 
             function requestJob(event) {
                 event.preventDefault();
-                let input = document.getElementById("work-size")
-                ws.send(input.value)
-                // input.value = ''
+                ws.send(
+                    JSON.stringify({
+                        "work_size": document.getElementById("work-size").value,
+                        "timeout": document.getElementById("timeout").value
+                    })
+                )
             }
 
             function removeAll(event) {

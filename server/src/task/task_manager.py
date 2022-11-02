@@ -21,32 +21,27 @@ class TaskManager:
         self.loop: asyncio.AbstractEventLoop = loop
         self.manager = Manager()
 
-    async def add_task(self, task_size, timeout: float = 30.0):
+    async def add_task(self, task_size, task_timeout):
         start_time = time.time()
         task_id = round(start_time * 1000000 % 1000000000)
-        await self.connection_manager.broadcast({
-            "id": task_id, "status": "running", "size": task_size
-        })
 
+        task_status = {
+            "id": task_id, "status": "running", "size": task_size,
+            "timeout": f"{task_timeout}s"
+        }
+        await self.connection_manager.broadcast(task_status)
         try:
             result = self.manager.dict()
             await asyncio.wait_for(
                 self.loop.run_in_executor(
-                    None, run_task, matrix_multiplication, timeout, task_size, result
+                    None, run_task, matrix_multiplication, task_timeout, task_size, result
                 ),
                 None
             )
-            await self.connection_manager.broadcast({
-                "id": task_id,
-                "status": "done",
-                "size": task_size,
-                "total_time": f"{time.time() - start_time:.3f}s",
-                "result": dict(result)
-            })
+            task_status["status"] = "done"
+            task_status["result"] = dict(result)
         except asyncio.exceptions.TimeoutError:
-            await self.connection_manager.broadcast({
-                "id": task_id,
-                "status": "fail",
-                "size": task_size,
-                "total_time": f"{time.time() - start_time:.3f}s"
-            })
+            task_status["status"] = "fail"
+        finally:
+            task_status["total_time"] = f"{time.time() - start_time:.3f}s"
+            await self.connection_manager.broadcast(task_status)
